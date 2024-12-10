@@ -1,0 +1,46 @@
+---
+services:
+  weaviate:
+    command:
+    - --host
+    - 0.0.0.0
+    - --port
+    - '8080'
+    - --scheme
+    - http
+    image: semitechnologies/weaviate:latest
+    ports:
+    - 8080:8080
+    - 50052:50051
+    networks:
+    - app_network
+    volumes:
+    - weaviate_data:/var/lib/weaviate
+    environment:
+      QUERY_DEFAULTS_LIMIT: 25
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: 'true'
+      PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
+      DEFAULT_VECTORIZER_MODULE: 'text2vec-huggingface'
+      ENABLE_MODULES: 'text2vec-huggingface'
+      CLUSTER_HOSTNAME: 'node1'
+      AUTOSCHEMA_ENABLED: 'false'
+  
+  api:
+    build:
+      context: .
+    ports:
+    - "8000:8000"
+    networks:
+    - app_network
+    env_file:
+    - .env
+    depends_on: 
+    - weaviate
+
+networks:
+  app_network:
+    driver: bridge
+
+volumes:
+  weaviate_data:
+...
