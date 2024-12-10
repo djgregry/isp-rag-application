@@ -25,18 +25,30 @@ services:
       CLUSTER_HOSTNAME: 'node1'
       AUTOSCHEMA_ENABLED: 'false'
   
-  api:
+  backend:
     build:
-      context: .
+      context: ./backend
     ports:
     - "8000:8000"
     networks:
     - app_network
     env_file:
-    - .env
+    - ./backend/.env
     depends_on: 
     - weaviate
 
+  frontend:
+    build:
+      context: ./frontend
+    ports: 
+      - "5500:80"
+    networks:
+      - app_network
+    depends_on:
+      - backend
+    
+    # Access the frontend at http://localhost:5500/ when the container is running.
+    
 networks:
   app_network:
     driver: bridge
