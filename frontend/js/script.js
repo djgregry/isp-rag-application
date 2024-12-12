@@ -35,6 +35,9 @@ function appendMessage(message, sender) {
 
     // Append the message to the chat container
     chatContainer.appendChild(messageText);
+
+    // Scroll to the bottom of the chat container
+    chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
 // Function to generate bot response by making an API call

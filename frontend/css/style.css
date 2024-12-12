@@ -1,0 +1,105 @@
+* {
+    box-sizing: border-box;
+    font-family: "Gill Sans", sans-serif;
+}
+
+body {
+    background-color: #f1ecec;
+    display: flex;
+    flex-direction: column;
+    height: 100vh; 
+}
+
+/* CSS for page header */
+h1 {
+    color: rgb(0, 0, 0);
+    font-size: 300%;
+    margin: 10px 0;
+}
+
+.header {
+    background-color: #aad7f5;
+    box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
+    border-radius: 20px;
+    width: 80%;
+    margin: 20px auto;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+}
+
+.header img {
+    width: 90px;
+    height: 90px;
+    margin-right: 20px;
+}
+
+.header .text {
+    margin-left: 5%;
+}
+
+/* CSS for the chat area */
+.chat-container {
+    flex: 1;
+    border-radius: 20px;
+    background-color: rgb(255, 255, 255);
+    box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
+    width: 80%;
+    font-size: 110%;
+    margin: 20px auto;
+    overflow-y: auto;
+    padding: 5%; 
+}
+.user{
+    max-width: 60%;
+    padding: 10px;
+    border-radius: 10px;
+    word-wrap: break-word;
+    background-color: #d9d4d4;
+    float: right;
+}
+.bot{
+    float: left;
+    word-wrap: break-word;
+    color: rgb(3, 3, 3);
+    width: 100%;
+    padding: 10px;
+}
+.chat-container p {
+    margin-bottom: 2%;
+}
+
+/* CSS for page footer containing chat input*/
+.footer {
+    text-align: center;
+}
+
+.chat-input {
+    width: 80%;
+    box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
+    padding: 10px;
+    border-radius: 20px;
+    background-color: #aad7f5;
+    margin: 20px auto;
+}
+
+.chat-input form {
+    display: flex;
+    align-items: center;
+}
+
+.chat-input input {
+    border-radius: 10px;
+    padding: 10px;
+    font-size: 20px;
+    width: 100%;
+    margin-right: 5px;
+}
+
+.chat-input button {
+    background-color: rgb(0, 0, 0);
+    padding: 10px 12px;
+    color: #fffbfb;
+    border-radius: 10px;
+    cursor: pointer;
+}
