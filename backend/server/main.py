@@ -1,6 +1,7 @@
 import os
 import time
 from dotenv import load_dotenv
+from typing import List
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from weaviate.connect import ConnectionParams
@@ -58,14 +59,18 @@ app.add_middleware(
 )
 
 # Define the data model for the request body
-class QueryRequest(BaseModel):
-    query: str = None
+class ChatMessage(BaseModel):
+    role: str = None
+    content: str = None
+
+class ChatHistory(BaseModel):
+    chat: List[ChatMessage]
 
 
-# Define API endpoint for handling queries
-@app.post("/query")
-async def handle_query(request: QueryRequest):
-    response = generate_response(request.query)
+# Define API endpoint for handling chat generation
+@app.post("/generate-chat")
+async def handle_query(request: ChatHistory):
+    response = generate_response(chats = request.chat)
     return response
 
 
@@ -79,6 +84,9 @@ def get_context(query: str) -> str:
     Returns:
         str: Combined abstract texts from the database.
     """
+    if not query:
+        return ""
+    
     try:
         client = create_weaviate_client()
         
@@ -97,10 +105,9 @@ def get_context(query: str) -> str:
         return "No relevant context found"
 
 
-
-def generate_response(query):
+def generate_response(chats: List[ChatMessage]):
     """
-    Generate a response based on the query and relevant context.
+    Generate a response based on a given chat history and relevant context.
 
     Args:
         query (str): The user query.
@@ -108,20 +115,37 @@ def generate_response(query):
     Returns:
         str: Generated reponse from the language model.
     """
-    client = Groq(api_key=GROQ_API_KEY)
-    context_text = get_context(query)
-    system_prompt = f"""You are a helpful assistant. If relevant, use the context to answer the user's query.
-    
-    Context: {context_text}"""
+    try:
+        client = Groq(api_key=GROQ_API_KEY)
 
-    chat_completion = client.chat.completions.create(
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": query}
-        ],
-        model="llama3-8b-8192",
-    )
-    return {
-        "context" : context_text, 
-        "response": chat_completion.choices[0].message.content
-    }
+        query = chats[-1].content
+        context_text = get_context(query)
+
+        # Add system prompt with the relevant context
+        messages = [{
+            "role": "system", 
+            "content": f"""You are a helpful assistant. If relevant, use the context to answer the user's query.
+            
+            Context: {context_text}"""
+        }]
+
+        # Add chat history
+        messages.extend([
+            {"role": chat.role, "content": chat.content} for chat in chats
+        ])
+
+        # Generate chat completion
+        chat_completion = client.chat.completions.create(
+            messages=messages,
+            model="llama3-8b-8192",
+        )
+        return {
+            "context" : context_text, 
+            "response": chat_completion.choices[0].message.content
+        }
+    
+    except Exception as e:
+        return {
+            "context": "",
+            "response": f"An error occured while generating the response: {e}"
+        }

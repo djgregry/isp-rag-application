@@ -13,15 +13,24 @@ document.getElementById("chat-form").addEventListener("submit", async function(e
 
     // Append the user message to the conversation
     appendMessage(userInput, 'user')
-    
+
+    // Get the chat-container element
+    const chatContainer = document.querySelector('.chat-container');
+
+    // Collect all <p> elements inside chat-container
+    const chats = chatContainer.querySelectorAll('p.bot, p.user');
+
+    // Convert to an array
+    const chatArray = Array.from(chats).map(chat => ({
+        role: chat.classList.contains('bot') ? 'assistant' : 'user',
+        content: chat.textContent.trim()
+    }));
+
     // Generate bot response
-    const botResponse = await generateBotResponse(userInput);
-
-    // Checking context used in chat generation
-    appendMessage(`CONTEXT: ${botResponse.context}`, 'context')
-
+    const botResponse = await generateBotResponse(chatArray)
+    
     // Append bot response to the conversation
-    appendMessage(`BOT: ${botResponse.response}`, 'bot');
+    appendMessage(`${botResponse.response}`, 'bot');
 });
 
 
@@ -41,13 +50,13 @@ function appendMessage(message, sender) {
 }
 
 // Function to generate bot response by making an API call
-async function generateBotResponse(userInput) {
+async function generateBotResponse(chat) {
     try {
-        // Send a POST request to the server with the user's input as JSON
-        const response = await fetch("http://127.0.0.1:8000/query", {
+        // Send a POST request to the server with the chat history as JSON
+        const response = await fetch("http://127.0.0.1:8000/generate-chat", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ "query" : userInput })
+            body: JSON.stringify({ "chat": chat })
         });
 
         // Check the response is successful
