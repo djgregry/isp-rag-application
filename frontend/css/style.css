@@ -65,7 +65,33 @@ h1 {
     width: 100%;
     padding: 10px;
 }
+.button-div {
+    background-color: rgb(255, 255, 255);
+    margin: 50px;
+    width: 100%;
+    padding: 10px;
+    float: left;
+}
+.load-button {
+    background-color: rgb(28, 180, 129);
+    border-radius: 20px;
+    border: none;
+    box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
+    color: white;
+    text-align: center;  
+    cursor: pointer;
+}
+.load-button:hover {
+    background-color:rgb(20, 124, 90);
+}
+.load-button:active {
+    box-shadow: 0 6px 16px 0 rgba(0, 0, 0, 0.2);
+    transform: translateY(2px);
+}
 .chat-container p {
+    margin-bottom: 2%;
+}
+.chat-container button {
     margin-bottom: 2%;
 }
 

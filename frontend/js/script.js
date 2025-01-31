@@ -31,7 +31,64 @@ document.getElementById("chat-form").addEventListener("submit", async function(e
     
     // Append bot response to the conversation
     appendMessage(`${botResponse.response}`, 'bot');
+
+    // If url is available is present in the response, add a button
+    if (botResponse.url) {
+        appendLoadButton(botResponse.url);
+    }
 });
+
+
+function appendLoadButton(url) {
+    const chatContainer = document.querySelector(".chat-container");
+
+    // Create a wrapper div for the button
+    const buttonDiv = document.createElement("div");
+    buttonDiv.classList.add("button-div")
+
+    // Create article loading button
+    const button = document.createElement("button");
+    button.textContent = "Load Full Article";
+    button.classList.add("load-button");
+
+    // Add event listener to handle button clicks
+    button.addEventListener("click", async function() {
+        console.log(url);
+        const response = await handleLoadDocuments(url);
+        console.log(response);
+    });
+
+    // Append button to chat container
+    buttonDiv.appendChild(button)
+    chatContainer.appendChild(buttonDiv);
+
+    // Scroll to the bottom of the chat container
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+}
+
+// Function to load article contents into database via API call
+async function handleLoadDocuments(url) {
+    try {
+        // Send POST request to the server with url as JSON
+        const response = await fetch("http://127.0.0.1:8000/load-content", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ "url": url})
+        });
+
+        if (!response.ok) {
+            throw new Error(`Server error: ${response.status}`)
+        }
+
+        const json = await response.json();
+
+        return json;
+
+    } catch(error) {
+        console.error('Error:', error);
+        return { response : "An error occurred." }
+    }
+}
 
 
 function appendMessage(message, sender) {
@@ -70,6 +127,6 @@ async function generateBotResponse(chat) {
 
     } catch (error) {
         console.error('Error:', error);
-        return "An error occurred.";
+        return { response: "An error occurred.", url: null};
     }
 }
