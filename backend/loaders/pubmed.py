@@ -1,5 +1,4 @@
 import os
-import time
 import argparse
 from typing import Dict, List
 import weaviate
@@ -93,7 +92,7 @@ def fetch_pubmed_articles(ids: List[str]) -> List[Dict[str, str]]:
                 for section in abstract_sections
             )
 
-            # Add article detials to the list
+            # Add article details to the list
             articles.append({
                 "abstract": f"## TITLE\n\n{title}\n\n{abstract}",
                 "url": f"{PUBMED_BASE_URL}{article_id}"
@@ -126,8 +125,10 @@ def add_data(client: weaviate.Client, query: str):
     Add data to the Weaviate collection.
     """
     setup_weaviate(client)
-    collection = client.collections.get("Articles")
-    refined_query = f"{query} AND hasabstract[text] AND free full text[sb]"
+    collection = client.collections.get("Abstracts")
+    
+    # Query articles which have and abstract and have a full free text available at PubMed Central
+    refined_query = f"{query} AND hasabstract[text] AND \"pubmed pmc\"[sb]"
     ids = search_pubmed_in_range(refined_query, "2000/01/01", "2025/03/01")
     model = SentenceTransformer("neuml/pubmedbert-base-embeddings")
 
