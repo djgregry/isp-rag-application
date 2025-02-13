@@ -67,9 +67,7 @@ h1 {
 }
 .button-div {
     background-color: rgb(255, 255, 255);
-    margin: 50px;
     width: 100%;
-    padding: 10px;
     float: left;
 }
 .load-button {
@@ -80,6 +78,7 @@ h1 {
     color: white;
     text-align: center;  
     cursor: pointer;
+    padding: 10px;
 }
 .load-button:hover {
     background-color:rgb(20, 124, 90);
@@ -89,9 +88,6 @@ h1 {
     transform: translateY(2px);
 }
 .chat-container p {
-    margin-bottom: 2%;
-}
-.chat-container button {
     margin-bottom: 2%;
 }
 
