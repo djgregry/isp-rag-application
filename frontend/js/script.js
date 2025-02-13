@@ -14,6 +14,10 @@ document.getElementById("chat-form").addEventListener("submit", async function(e
     // Append the user message to the conversation
     appendMessage(userInput, 'user')
 
+    // Prevent user from sending messages while generating a response
+    document.getElementById("user-input").disabled = true;
+    document.getElementById("chat-form").querySelector("button").disabled = true;
+
     // Get the chat-container element
     const chatContainer = document.querySelector('.chat-container');
 
@@ -36,6 +40,9 @@ document.getElementById("chat-form").addEventListener("submit", async function(e
     if (botResponse.url) {
         appendLoadButton(botResponse.url);
     }
+
+    document.getElementById("user-input").disabled = false;
+    document.getElementById("chat-form").querySelector("button").disabled = false;
 });
 
 
@@ -44,7 +51,7 @@ function appendLoadButton(url) {
 
     // Create a wrapper div for the button
     const buttonDiv = document.createElement("div");
-    buttonDiv.classList.add("button-div")
+    buttonDiv.classList.add("button-div");
 
     // Create article loading button
     const button = document.createElement("button");
@@ -59,7 +66,7 @@ function appendLoadButton(url) {
     });
 
     // Append button to chat container
-    buttonDiv.appendChild(button)
+    buttonDiv.appendChild(button);
     chatContainer.appendChild(buttonDiv);
 
     // Scroll to the bottom of the chat container
@@ -73,7 +80,7 @@ async function handleLoadDocuments(url) {
         const response = await fetch("http://127.0.0.1:8000/load-content", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ "url": url})
+            body: JSON.stringify({ "url": url })
         });
 
         if (!response.ok) {
