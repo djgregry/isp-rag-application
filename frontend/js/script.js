@@ -37,7 +37,7 @@ document.getElementById("chat-form").addEventListener("submit", async function(e
     appendMessage(`${botResponse.response}`, 'bot');
 
     // If url is available is present in the response, add a button
-    if (botResponse.url) {
+    if (botResponse.classification == "abstract") {
         appendLoadButton(botResponse.url);
     }
 
@@ -129,7 +129,7 @@ async function generateBotResponse(chat) {
         }
 
         const json = await response.json();
-
+        console.log(json);
         return json;
 
     } catch (error) {
