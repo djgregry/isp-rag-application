@@ -6,7 +6,8 @@ from dotenv import load_dotenv
 from Bio import Entrez
 from datetime import datetime, timedelta
 from sentence_transformers import SentenceTransformer
-from weaviate.classes.config import Configure, Property, DataType
+
+from backend.loaders.vector_db import *
 
 # Load environment variables
 load_dotenv()
@@ -101,30 +102,11 @@ def fetch_pubmed_articles(ids: List[str]) -> List[Dict[str, str]]:
         return articles
 
 
-def setup_weaviate(client: weaviate.Client):
-    """
-    Set up the Weaviate database.
-
-    Args:
-        client (weaviate.Client): Weaviate client instance.
-    """
-    if not client.collections.exists("Articles"):
-        client.collections.create(
-            "Articles",
-            vectorizer_config = Configure.Vectorizer.none(),
-            properties=[
-                Property(name="abstract", data_type=DataType.TEXT),
-                Property(name="url", data_type=DataType.TEXT, skip_vectorization=True)
-            ]
-        )
-        print("Collection created successfully.")
-
-
 def add_data(client: weaviate.Client, query: str):
     """
     Add data to the Weaviate collection.
     """
-    setup_weaviate(client)
+    setup_weaviate(client, "Abstracts")
     collection = client.collections.get("Abstracts")
     
     # Query articles which have and abstract and have a full free text available at PubMed Central
@@ -147,25 +129,6 @@ def add_data(client: weaviate.Client, query: str):
                 )
 
     print("Articles added successfully to Weaviate.")
-
-
-def delete_collection(client: weaviate.Client, collection_name: str):
-    """
-    Delete a specific collection.
-    """
-    if client.collections.exists(collection_name):
-        client.collections.delete(collection_name)
-        print(f"Collection '{collection_name}' deleted successfully.")
-    else:
-        print(f"Collection '{collection_name}' does not exist.")
-
-
-def delete_all_collections(client: weaviate.Client):
-    """
-    Delete all collections.
-    """
-    client.collections.delete_all()
-    print("All collections deleted successfully.")
 
 
 def main():
