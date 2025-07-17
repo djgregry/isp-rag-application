@@ -69,9 +69,10 @@ class ChatMessage(BaseModel):
     content: str = None
 
 class GenerationRequest(BaseModel):
-    model: str = "llama3-8b-8192"
+    model: str = "llama-3.3-70b-versatile"
     chats: List[ChatMessage]
     collections: List[str]
+    distance: float = 0
     limit: int = 1
 
 class Article(BaseModel):
@@ -85,7 +86,8 @@ async def handle_query(request: GenerationRequest):
         model = request.model, 
         chats = request.chats, 
         collections = request.collections,
-        limit = request.limit
+        limit = request.limit,
+        distance = request.distance
     )
     return response
 
@@ -99,12 +101,12 @@ async def handle_content_load(article: Article):
 
 # Define API endpoint for retrieving content from a collection in the Weaviate database
 @app.get("/retrieve-content")
-async def handle_retrieval(query: str="", limit: int=1, collection: str=""):
-    response = get_context(query, [collection], limit)
+async def handle_retrieval(query: str="", limit: int=1, distance: float=0, collection: str=""):
+    response = get_context(query, [collection], limit, distance)
     return response["context"]
 
 
-def get_context(query: str, collections: List[str], limit: int) -> str:
+def get_context(query: str, collections: List[str], limit: int, distance: float) -> str:
     """
     Fetch relevant context from the Weaviate database based on the query.
 
@@ -112,6 +114,7 @@ def get_context(query: str, collections: List[str], limit: int) -> str:
         query (str): The search query.
         collections (List[str]): Existing Weaviate collections from which to pull relevant context.
         limit (int): Number of relevant texts to include in the context.
+        distance (int): Minimum distance from query.
     
     Returns:
         dict: Dictionary containing the URL, and the content.
@@ -137,6 +140,7 @@ def get_context(query: str, collections: List[str], limit: int) -> str:
             response = collection.query.near_vector(
                 near_vector=embedding.tolist(),
                 limit=limit, 
+                distance = distance,
                 include_vector=True
             )
 
@@ -144,7 +148,7 @@ def get_context(query: str, collections: List[str], limit: int) -> str:
             if response.objects:
                 retrieved_context.append({
                     "url" : response.objects[0].properties["url"],
-                    "content": response.objects[0].properties["abstract"]
+                    "content": response.objects[0].properties.get("abstract")# or response.objects[0].properties.get("chunk") or "")
                 })
 
             else:
@@ -160,7 +164,7 @@ def get_context(query: str, collections: List[str], limit: int) -> str:
         client.close()
 
 
-def generate_response(model: str, chats: List[ChatMessage], collections: List[str], limit: int):
+def generate_response(model: str, chats: List[ChatMessage], collections: List[str], limit: int, distance: float):
     """
     Generate a response based on the given chat history and relevant context.
 
@@ -168,6 +172,7 @@ def generate_response(model: str, chats: List[ChatMessage], collections: List[st
         chat (List[ChatMessage]): The chat history with user and assistant messages.
         collections (List[str]): Existing Weaviate collections from which to pull relevant context.
         limit (int): Number of relevant texts to include in the context.
+        distance (int): Minimum distance from query.
     
     Returns:
         dict: Dictionary containing the source URL(s), generated response, and classification.
@@ -179,18 +184,21 @@ def generate_response(model: str, chats: List[ChatMessage], collections: List[st
         query = chats[-1].content
 
         # Retrieve relevant context from the database
-        contexts = get_context(query, collections, limit)
+        contexts = get_context(query, collections, limit, distance)
+        
         if isinstance(contexts, str):
             context_text = ""
         else:
-            context_text = f"\n\n".join([context["content"] for context in contexts["context"]])
+            context_text = "\n\n".join(
+                context["content"] for context in contexts["context"] if context.get("content") is not None
+            )
 
         # Define system prompt injected with relevant content
         system_msg = """
         You are an information extraction system that answers questions about Alzheimer's disease using only the information provided in the context.
         Your task is to generate a complete, detailed, and informative response by synthesizing as much relevant information as possible from the context. You may combine facts from different parts of the context, but do not add anything that is not explicitly stated.
         Always answer in your own words using clear and precise language. Do not copy text verbatim unless necessary for accuracy. Avoid speculation.
-        If the answer cannot be derived from the context, respond with: "The answer is not available in the provided context."
+        If the answer cannot be derived from the context, try to generate an answer without it.
         Do not mention the context or refer to it in your answer.
         """
 
@@ -243,16 +251,16 @@ def load_content(url: str):
     try:
         client = create_weaviate_client()
         
-        if not client.collections.exists("LoadedArticles"):
+        if not client.collections.exists("Articles"):
             client.collections.create(
-                name="LoadedArticles",
+                name="Articles",
                 vectorizer_config = Configure.Vectorizer.none(),
                 properties=[
-                    Property(name="chunk", data_type=DataType.TEXT),
+                    Property(name="abstract", data_type=DataType.TEXT),
                     Property(name="url", data_type=DataType.TEXT, skip_vectorization=True)
                 ]
             )
-        collection = client.collections.get("LoadedArticles")
+        collection = client.collections.get("LoadedAArticlesrticles")
 
         # Check that content from this URL has not yet been loaded into the database
         if url_exists(collection, url):
@@ -267,7 +275,7 @@ def load_content(url: str):
         # Initialize sentence transformer model for embedding
         model = SentenceTransformer("neuml/pubmedbert-base-embeddings")
 
-        # Add extracts from the article to LoadedArticles collection in batches
+        # Add extracts from the article to Articles collection in batches
         with collection.batch.dynamic() as batch:
             for chunk in chunks:
                 embedding = model.encode(chunk) 

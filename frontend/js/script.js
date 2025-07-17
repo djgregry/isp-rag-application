@@ -36,9 +36,9 @@ document.getElementById("chat-form").addEventListener("submit", async function(e
     // Append bot response to the conversation
     appendMessage(`${botResponse.response}`, 'bot');
 
-    // If url is available is present in the response, add a button
-    if (botResponse.classification == "abstract") {
-        appendLoadButton(botResponse.url);
+    // add a button to potentially load entire article
+    if (Array.isArray(botResponse.urls) && botResponse.urls.length > 0 && botResponse.urls[0] != null) {
+        appendLoadButton(botResponse.urls[0]);
     }
 
     document.getElementById("user-input").disabled = false;
@@ -60,9 +60,7 @@ function appendLoadButton(url) {
 
     // Add event listener to handle button clicks
     button.addEventListener("click", async function() {
-        console.log(url);
         const response = await handleLoadDocuments(url);
-        console.log(response);
     });
 
     // Append button to chat container
@@ -120,7 +118,7 @@ async function generateBotResponse(chat) {
         const response = await fetch("http://127.0.0.1:8000/generate-chat", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ "chat": chat })
+            body: JSON.stringify({ "chats": chat , "collections": ["Articles"], "distance": 0.5 })
         });
 
         // Check the response is successful
@@ -129,7 +127,6 @@ async function generateBotResponse(chat) {
         }
 
         const json = await response.json();
-        console.log(json);
         return json;
 
     } catch (error) {
